@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Donaciones de Sangre</title>
@@ -131,27 +132,35 @@
             }
         };
 
-// Import the functions you need from the SDKs you need
-        import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-        const firebaseConfig = {
-              apiKey: "AIzaSyDDDK3byfgCqmdcTLKvy4xLXzBNo3apHgg",
-              authDomain: "app-donaciones-sangre.firebaseapp.com",
-              projectId: "app-donaciones-sangre",
-              storageBucket: "app-donaciones-sangre.firebasestorage.app",
-              messagingSenderId: "585715955050",
-              appId: "1:585715955050:web:16b0e235cc94442c252113"
+        window.loadLeaderboard = () => {
+            console.log("Cargando tabla de clasificación...");
+            // Esta función se definirá después de la inicialización de Firebase
         };
 
-// Initialize Firebase
-        const app = initializeApp(firebaseConfig);
+        // Configuración de Firebase (reemplaza con tus credenciales reales)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCAc-eNklxpk-0yeRxVqJ1LVoIFNVdzXVs",
+          authDomain: "web-donacion.firebaseapp.com",
+          projectId: "web-donacion",
+          storageBucket: "web-donacion.firebasestorage.app",
+          messagingSenderId: "618714540313",
+          appId: "1:618714540313:web:63297095ecf408b2f67d88"
+        };
 
-        // Función para cargar la tabla de clasificación
-        const loadLeaderboard = () => {
-            console.log("Cargando tabla de clasificación...");
+        const appId = 'blood-donation-app';
+
+        // Inicializar Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let userId = null;
+
+        // Definir loadLeaderboard después de la inicialización
+        window.loadLeaderboard = () => {
             const q = query(collection(db, `artifacts/${appId}/public/data/groups`));
             onSnapshot(q, (snapshot) => {
                 const groups = [];
@@ -189,8 +198,8 @@
                 }
             } else {
                 signInAnonymously(auth).catch((error) => {
-                    console.error("Error en la autenticación anónima:", error);
-                    showMessage("Error de autenticación. La app podría no funcionar correctamente.");
+                    console.error("Error en la autenticación anónima:", error.code, error.message);
+                    showMessage("Error de autenticación. La app podría no funcionar correctamente. Código: " + error.code);
                 });
             }
         });
