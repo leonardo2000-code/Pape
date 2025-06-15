@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Donaciones de Sangre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active {
+            border-bottom-color: #ef4444;
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-red-600">Campaña de Donación de Sangre</h1>
+            <p class="text-lg text-gray-600 mt-2">Juntos salvamos vidas, una donación a la vez.</p>
+        </header>
+        <div class="mb-8 border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs">
+                <button id="tab-leaderboard-btn" class="tab-button active py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-red-600 hover:border-red-500" onclick="showTab('leaderboard')">
+                    Clasificación
+                </button>
+                <button id="tab-register-donation-btn" class="tab-button py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-red-600 hover:border-red-500" onclick="showTab('register-donation')">
+                    Registrar Donación
+                </button>
+                <button id="tab-register-group-btn" class="tab-button py-4 px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-red-600 hover:border-red-500" onclick="showTab('register-group')">
+                    Crear Grupo
+                </button>
+            </nav>
+        </div>
+        <main>
+            <div id="leaderboard" class="tab-content active">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">🏆 Tabla de Clasificación</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b-2 border-gray-200">
+                                <th class="p-3 text-lg font-semibold text-gray-600">#</th>
+                                <th class="p-3 text-lg font-semibold text-gray-600">Grupo Familiar</th>
+                                <th class="p-3 text-lg font-semibold text-gray-600">Puntos Totales</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr><td colspan="3" class="text-center p-4 text-gray-500">Cargando clasificación...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="register-donation" class="tab-content">
+                <div id="group-search-step">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-700">🔍 Paso 1: Buscar Grupo</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <label for="group-code-input" class="block text-md font-medium text-gray-700 mb-2">Ingresa el Código de Grupo:</label>
+                        <input type="text" id="group-code-input" class="w-full p-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Ej: FAM-12345">
+                        <button id="search-group-btn" class="mt-4 w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition duration-300">
+                            Buscar Grupo
+                        </button>
+                    </div>
+                </div>
+                <div id="donation-form-step" class="hidden mt-6">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-700">💉 Paso 2: Registrar Donación</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <p class="mb-4">Registrando donación para: <strong id="group-name-display" class="text-red-600"></strong></p>
+                        <form id="donation-form">
+                            <input type="hidden" id="found-group-id">
+                            <div>
+                                <label for="donation-volume" class="block text-md font-medium text-gray-700 mb-2">Volumen Donado (en ml):</label>
+                                <input type="number" id="donation-volume" class="w-full p-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Ej: 450" required>
+                            </div>
+                            <button type="submit" class="mt-4 w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition duration-300">
+                                Guardar Donación y Sumar Puntos
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="register-group" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">👥 Crear Nuevo Grupo Familiar</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <form id="register-group-form">
+                        <div class="mb-4">
+                            <label for="group-name" class="block text-md font-medium text-gray-700 mb-2">Nombre del Grupo (Ej: Familia Pérez):</label>
+                            <input type="text" id="group-name" class="w-full p-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="group-members" class="block text-md font-medium text-gray-700 mb-2">Nombres de los Integrantes (separados por comas):</label>
+                            <input type="text" id="group-members" class="w-full p-3 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500" placeholder="Juan, Ana, Luis, Maria" required>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition duration-300">
+                            Registrar Grupo
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+        <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+                <p id="modal-message" class="text-lg mb-4"></p>
+                <div id="modal-group-code-container" class="mb-4 hidden">
+                    <p class="text-md text-gray-600">Tu código de grupo es:</p>
+                    <p id="modal-group-code" class="text-2xl font-bold bg-gray-100 p-2 rounded-md my-2"></p>
+                    <p class="text-sm text-gray-500">Guarda este código. Lo necesitarás para registrar donaciones.</p>
+                </div>
+                <button id="modal-close-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-md hover:bg-red-700">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        // Definir funciones globales al inicio
+        window.showTab = (tabName) => {
+            console.log("Cambiando a pestaña:", tabName);
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            const tab = document.getElementById(tabName);
+            const tabButton = document.getElementById(`tab-${tabName}-btn`);
+            if (tab && tabButton) {
+                tab.classList.add('active');
+                tabButton.classList.add('active');
+            }
+        };
+
+        // Configuración de Firebase (reemplaza con tus credenciales)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "TU_PROJECT_ID",
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        const appId = 'blood-donation-app';
+
+        // Inicializar Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        let userId = null;
+
+        // Función para cargar la tabla de clasificación
+        const loadLeaderboard = () => {
+            console.log("Cargando tabla de clasificación...");
+            const q = query(collection(db, `artifacts/${appId}/public/data/groups`));
+            onSnapshot(q, (snapshot) => {
+                const groups = [];
+                snapshot.forEach(doc => groups.push({ id: doc.id, ...doc.data() }));
+                groups.sort((a, b) => b.points - a.points);
+                const leaderboardBody = document.getElementById('leaderboard-body');
+                leaderboardBody.innerHTML = '';
+                if (groups.length === 0) {
+                    leaderboardBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-gray-500">Aún no hay grupos registrados. ¡Sé el primero!</td></tr>';
+                    return;
+                }
+                groups.forEach((group, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="p-3 font-semibold">${index + 1}</td>
+                        <td class="p-3">${group.name}</td>
+                        <td class="p-3 font-bold text-red-600">${group.points}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+            }, (error) => {
+                console.error("Error al cargar la tabla:", error);
+                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="3" class="text-center p-4 text-red-500">Error al cargar la clasificación.</td></tr>';
+            });
+        };
+
+        // Autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("Usuario autenticado:", userId);
+                if (typeof loadLeaderboard === 'function') {
+                    loadLeaderboard();
+                }
+            } else {
+                signInAnonymously(auth).catch((error) => {
+                    console.error("Error en la autenticación anónima:", error);
+                    showMessage("Error de autenticación. La app podría no funcionar correctamente.");
+                });
+            }
+        });
+
+        // Colecciones de Firestore
+        const groupsCollection = collection(db, `artifacts/${appId}/public/data/groups`);
+
+        // Registrar un nuevo grupo
+        document.getElementById('register-group-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const groupName = document.getElementById('group-name').value.trim();
+            const membersInput = document.getElementById('group-members').value.trim();
+            if (!groupName || !membersInput) {
+                showMessage("Por favor, completa todos los campos.");
+                return;
+            }
+            const members = membersInput.split(',').map(m => m.trim()).filter(m => m);
+            const groupCode = `FAM-${uuid.v4().substr(0, 5).toUpperCase()}`;
+            try {
+                await addDoc(groupsCollection, {
+                    name: groupName,
+                    members: members,
+                    points: 0,
+                    code: groupCode,
+                    createdAt: new Date()
+                });
+                showMessage(`¡Grupo "${groupName}" registrado con éxito!`, groupCode);
+                e.target.reset();
+                showTab('leaderboard');
+            } catch (error) {
+                console.error("Error al registrar grupo:", error);
+                showMessage("Ocurrió un error al registrar el grupo.");
+            }
+        });
+
+        // Buscar grupo por código
+        document.getElementById('search-group-btn').addEventListener('click', async () => {
+            const groupCode = document.getElementById('group-code-input').value.trim();
+            if (!groupCode) {
+                showMessage("Por favor, ingresa un código de grupo.");
+                return;
+            }
+            const q = query(groupsCollection, where("code", "==", groupCode));
+            try {
+                const querySnapshot = await getDocs(q);
+                if (querySnapshot.empty) {
+                    showMessage("No se encontró ningún grupo con ese código. Verifica que esté escrito correctamente.");
+                    document.getElementById('donation-form-step').classList.add('hidden');
+                } else {
+                    const groupDoc = querySnapshot.docs[0];
+                    document.getElementById('found-group-id').value = groupDoc.id;
+                    document.getElementById('group-name-display').textContent = groupDoc.data().name;
+                    document.getElementById('group-search-step').classList.add('hidden');
+                    document.getElementById('donation-form-step').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error al buscar grupo:", error);
+                showMessage("Ocurrió un error al buscar el grupo.");
+            }
+        });
+
+        // Registrar una donación
+        document.getElementById('donation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const volume = parseInt(document.getElementById('donation-volume').value);
+            const groupId = document.getElementById('found-group-id').value;
+            if (!volume || volume <= 0) {
+                showMessage("Por favor, ingresa un volumen de donación válido.");
+                return;
+            }
+            const points = Math.floor(volume / 100);
+            try {
+                const groupRef = doc(db, `artifacts/${appId}/public/data/groups`, groupId);
+                const groupSnapshot = await getDocs(query(collection(db, `artifacts/${appId}/public/data/groups`), where('__name__', '==', groupId)));
+                const currentPoints = groupSnapshot.docs[0].data().points || 0;
+                await updateDoc(groupRef, { points: currentPoints + points });
+                showMessage(`¡Donación registrada! Se sumaron ${points} puntos. ¡Gracias por tu generosidad!`);
+                e.target.reset();
+                document.getElementById('group-code-input').value = '';
+                document.getElementById('donation-form-step').classList.add('hidden');
+                document.getElementById('group-search-step').classList.remove('hidden');
+                showTab('leaderboard');
+            } catch (error) {
+                console.error("Error al registrar la donación:", error);
+                showMessage("Ocurrió un error al registrar la donación.");
+            }
+        });
+
+        // Modal de mensajes
+        const modal = document.getElementById('message-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCodeContainer = document.getElementById('modal-group-code-container');
+        const modalGroupCode = document.getElementById('modal-group-code');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        const showMessage = (message, groupCode = null) => {
+            modalMessage.textContent = message;
+            if (groupCode) {
+                modalGroupCode.textContent = groupCode;
+                modalCodeContainer.classList.remove('hidden');
+            } else {
+                modalCodeContainer.classList.add('hidden');
+            }
+            modal.classList.remove('hidden');
+        };
+
+        modalCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
